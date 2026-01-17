@@ -1,131 +1,86 @@
-// =====================
-// Database initialization (PostgreSQL)
-// =====================
-const { Pool } = require("pg");
+const socket = io(); 
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === "production"
-    ? { rejectUnauthorized: false }
-    : false
+const joinContainer = document.getElementById("join-container");
+const chatContainer = document.getElementById("chat-container");
+const joinBtn = document.getElementById("join-btn");
+const sendBtn = document.getElementById("send-btn");
+
+const usernameInput = document.getElementById("username");
+const messageInput = document.getElementById("message-input");
+const messagesDiv = document.getElementById("messages");
+const usersDiv = document.getElementById("users");
+const joinError = document.getElementById("join-error");
+
+//Load message history for new joiners.
+socket.on("message_history", messages => {
+  messagesDiv.innerHTML = "";
+  messages.forEach(msg => {
+    addMessage(`${msg.username}: ${msg.text}`);
+  });
 });
 
-async function initDB() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS messages (
-      id SERIAL PRIMARY KEY,
-      username TEXT NOT NULL,
-      text TEXT NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-  console.log("PostgreSQL ready");
+
+// Join chat
+joinBtn.onclick = () => {
+  const username = usernameInput.value.trim();
+  if (!username) return;
+
+  socket.emit("join", username);
+  joinContainer.classList.add("hidden");
+  chatContainer.classList.remove("hidden");
+};
+
+// Send message
+sendBtn.onclick = sendMessage;
+messageInput.addEventListener("keypress", e => {
+  if (e.key === "Enter") sendMessage();
+});
+
+function sendMessage() {
+  const msg = messageInput.value.trim();
+  if (!msg) return;
+
+  socket.emit("message", msg);
+  messageInput.value = "";
 }
 
-// =====================
-// Server initialization
-// =====================
-const express = require("express");
-const http = require("http");
-const path = require("path");
-const { Server } = require("socket.io");
-
-const app = express();
-const server = http.createServer(app);
-
-const io = new Server(server, {
-  transports: ["websocket", "polling"],
-  cors: {
-    origin: "*"
-  }
+// Receive messages
+socket.on("message", data => {
+  addMessage(`${data.user}: ${data.text}`);
 });
 
-app.use(express.static(path.join(__dirname, "public")));
-
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+// User joined
+socket.on("user_joined", username => {
+  addSystemMessage(`${username} joined`);
 });
 
-// =====================
-// Chat state
-// =====================
-const users = new Map();
-const MAX_USERS = 6;
-
-// =====================
-// Socket.IO logic
-// =====================
-io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
-
-  if (users.size >= MAX_USERS) {
-    socket.emit("room_full", "Chat room is full (max 6 users)");
-    socket.disconnect();
-    return;
-  }
-
-  socket.on("join", async (username) => {
-    users.set(socket.id, username);
-
-    socket.broadcast.emit("user_joined", username);
-    io.emit("users_list", Array.from(users.values()));
-
-    // Load last 50 messages
-    const { rows } = await pool.query(
-      `SELECT username, text, created_at
-       FROM messages
-       ORDER BY created_at ASC
-       LIMIT 50`
-    );
-
-    socket.emit("message_history", rows);
-  });
-
-  socket.on("message", async (msg) => {
-    const username = users.get(socket.id);
-    if (!username) return;
-
-    const result = await pool.query(
-      `INSERT INTO messages (username, text)
-       VALUES ($1, $2)
-       RETURNING created_at`,
-      [username, msg]
-    );
-
-    io.emit("message", {
-      user: username,
-      text: msg,
-      time: result.rows[0].created_at
-    });
-  });
-
-  socket.on("disconnect", () => {
-    const username = users.get(socket.id);
-    if (!username) return;
-
-    users.delete(socket.id);
-    socket.broadcast.emit("user_left", username);
-    io.emit("users_list", Array.from(users.values()));
-
-    console.log("User disconnected:", socket.id);
-  });
+// User left
+socket.on("user_left", username => {
+  addSystemMessage(`${username} left`);
 });
 
-// =====================
-// Start server AFTER DB
-// =====================
-const PORT = process.env.PORT || 3000;
+// Update user list
+socket.on("users_list", users => {
+  usersDiv.textContent = `Users (${users.length}/6): ${users.join(", ")}`;
+});
 
-(async () => {
-  try {
-    console.log("Connecting to PostgreSQL...");
-    await initDB();
+// Room full
+socket.on("room_full", msg => {
+  joinError.textContent = msg;
+});
 
-    server.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  } catch (err) {
-    console.error("Startup error:", err);
-    process.exit(1);
-  }
-})();
+// Helpers
+function addMessage(text) {
+  const div = document.createElement("div");
+  div.className = "message";
+  div.textContent = text;
+  messagesDiv.appendChild(div);
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+function addSystemMessage(text) {
+  const div = document.createElement("div");
+  div.className = "message system";
+  div.textContent = text;
+  messagesDiv.appendChild(div);
+}
