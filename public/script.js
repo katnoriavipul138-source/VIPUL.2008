@@ -47,6 +47,19 @@ joinBtn.onclick = () => {
   chatContainer.classList.remove("hidden");
 };
 
+// Enter key se join allow karo
+usernameInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    joinBtn.click();
+  }
+});
+
+passwordInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    joinBtn.click();
+  }
+});
+
 // Send message
 sendBtn.onclick = sendMessage;
 messageInput.addEventListener("keypress", e => {
