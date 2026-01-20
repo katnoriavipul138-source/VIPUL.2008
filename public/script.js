@@ -10,6 +10,7 @@ const messageInput = document.getElementById("message-input");
 const messagesDiv = document.getElementById("messages");
 const usersDiv = document.getElementById("users");
 const joinError = document.getElementById("join-error");
+const passwordInput = document.getElementById("room-password");
 
 //Load message history for new joiners.
 socket.on("message_history", messages => {
@@ -23,11 +24,14 @@ socket.on("message_history", messages => {
 // Join chat
 joinBtn.onclick = () => {
   const username = usernameInput.value.trim();
-  if (!username) return;
+  const password = passwordInput.value.trim();
 
-  socket.emit("join", username);
-  joinContainer.classList.add("hidden");
-  chatContainer.classList.remove("hidden");
+  if (!username || !password) {
+    joinError.textContent = "Username and password required";
+    return;
+  }
+
+  socket.emit("join", { username, password });
 };
 
 // Send message
