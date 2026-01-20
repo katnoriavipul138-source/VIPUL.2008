@@ -26,12 +26,25 @@ joinBtn.onclick = () => {
   const username = usernameInput.value.trim();
   const password = passwordInput.value.trim();
 
+  // empty check
   if (!username || !password) {
     joinError.textContent = "Username and password required";
     return;
   }
 
-  socket.emit("join", { username, password });
+  //  PASSWORD CHECK (JS ONLY)
+  if (password !== "vishu") {
+    joinError.textContent = "Wrong password ";
+    return;
+  }
+
+  //  password sahi hai → server ko bhejo
+  joinError.textContent = "";
+  socket.emit("join", username);
+
+  // UI switch
+  joinContainer.classList.add("hidden");
+  chatContainer.classList.remove("hidden");
 };
 
 // Send message
