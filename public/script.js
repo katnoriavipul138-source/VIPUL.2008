@@ -32,19 +32,15 @@ joinBtn.onclick = () => {
     return;
   }
 
-  //  PASSWORD CHECK (JS ONLY)
-  if (password !== "vishu") {
-    joinError.textContent = "Wrong password ";
-    return;
-  }
+
 
   //  password sahi hai → server ko bhejo
   joinError.textContent = "";
-  socket.emit("join", username);
 
-  // UI switch
-  joinContainer.classList.add("hidden");
-  chatContainer.classList.remove("hidden");
+  socket.emit("join", {
+  username: username,
+  password: password
+});
 };
 
 // Send message
@@ -84,6 +80,13 @@ socket.on("users_list", users => {
 // Room full
 socket.on("room_full", msg => {
   joinError.textContent = msg;
+});
+
+// Join success
+socket.on("join_success", () => {
+  joinError.textContent = "";
+  joinContainer.classList.add("hidden");
+  chatContainer.classList.remove("hidden");
 });
 
 // Helpers
