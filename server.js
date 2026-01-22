@@ -76,22 +76,42 @@ io.on("connection", (socket) => {
     return;
   }
 
-  socket.on("join", async (username) => {
-    users.set(socket.id, username);
+socket.on("join", async ({ username, password }) => {
 
-    socket.broadcast.emit("user_joined", username);
-    io.emit("users_list", Array.from(users.values()));
+  // ❌ username allowed nahi
+  if (!ALLOWED_USERS[username]) {
+    socket.emit("room_full", "Invalid username ❌");
+    return;
+  }
 
-    // Load last 50 messages
-    const { rows } = await pool.query(
-      `SELECT username, text, created_at
-       FROM messages
-       ORDER BY created_at ASC
-       LIMIT 50`
-    );
+  // ❌ password galat
+  if (ALLOWED_USERS[username] !== password) {
+    socket.emit("room_full", "Wrong password ❌");
+    return;
+  }
 
-    socket.emit("message_history", rows);
-  });
+  // ❌ room full
+  if (users.size >= MAX_USERS) {
+    socket.emit("room_full", "Room is full ❌");
+    return;
+  }
+
+  // ✅ sab sahi
+  users.set(socket.id, username);
+
+  socket.broadcast.emit("user_joined", username);
+  io.emit("users_list", Array.from(users.values()));
+
+  // Load last 50 messages
+  const { rows } = await pool.query(`
+    SELECT username, text, created_at
+    FROM messages
+    ORDER BY created_at ASC
+    LIMIT 50
+  `);
+
+  socket.emit("message_history", rows);
+});
 
   socket.on("message", async (msg) => {
     const username = users.get(socket.id);
