@@ -98,6 +98,7 @@ socket.on("join", async ({ username, password }) => {
 
   // ✅ sab sahi
   users.set(socket.id, username);
+  socket.emit("join_success");
 
   socket.broadcast.emit("user_joined", username);
   io.emit("users_list", Array.from(users.values()));
