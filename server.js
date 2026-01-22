@@ -3,6 +3,18 @@
 // =====================
 const { Pool } = require("pg");
 
+const ALLOWED_USERS = {
+  Vipul: "vipul@123",
+  Vishu: "vishu@123",
+  Anshika: "anshika@123",
+  Nishant: "nishant@123",
+  Hardik: "hardik@123",
+  Naman: "naman@123"
+};
+
+const MAX_USERS = 6;
+const users = new Map();
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.NODE_ENV === "production"
