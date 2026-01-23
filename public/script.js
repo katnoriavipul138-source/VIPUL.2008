@@ -4,12 +4,12 @@ const socket = io({
 
 // Client-side helper (UI only)
 const USERS = {
-  anshika: "1111",
-  nishant: "2222",
-  vipul: "3333",
-  rohit: "4444",
-  neha: "5555",
-  aman: "6666"
+  anshika: "anshika@123",
+  nishant: "nishant@123",
+  vipul: "vipul@123",
+  rohit: "rohit@123",
+  rahul: "rahul@123",
+  aman: "aman@123"
 };
 
 const joinContainer = document.getElementById("join-container");
