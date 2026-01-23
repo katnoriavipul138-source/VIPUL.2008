@@ -1,4 +1,16 @@
-const socket = io(); 
+const socket = io({
+  transports: ["websocket"]
+});
+
+// Client-side helper (UI only)
+const USERS = {
+  anshika: "1111",
+  nishant: "2222",
+  vipul: "3333",
+  rohit: "4444",
+  neha: "5555",
+  aman: "6666"
+};
 
 const joinContainer = document.getElementById("join-container");
 const chatContainer = document.getElementById("chat-container");
@@ -6,44 +18,67 @@ const joinBtn = document.getElementById("join-btn");
 const sendBtn = document.getElementById("send-btn");
 
 const usernameInput = document.getElementById("username");
+const passwordInput = document.getElementById("password");
 const messageInput = document.getElementById("message-input");
 const messagesDiv = document.getElementById("messages");
 const usersDiv = document.getElementById("users");
 const joinError = document.getElementById("join-error");
-const passwordInput = document.getElementById("room-password");
 
-//Load message history for new joiners.
-socket.on("message_history", messages => {
-  messagesDiv.innerHTML = "";
-  messages.forEach(msg => {
-    addMessage(`${msg.username}: ${msg.text}`);
-  });
-});
-
-
-// Join chat
+// =====================
+// JOIN CHAT
+// =====================
 joinBtn.onclick = () => {
   const username = usernameInput.value.trim();
   const password = passwordInput.value.trim();
 
-  // empty check
   if (!username || !password) {
-    joinError.textContent = "Username and password required";
+    alert("Username and Password are required!");
     return;
   }
 
+  if (!USERS[username]) {
+    alert("❌ Invalid Username!");
+    return;
+  }
 
+  if (USERS[username] !== password) {
+    alert("❌ Wrong Password!");
+    passwordInput.value = "";
+    return;
+  }
 
-  //  password sahi hai → server ko bhejo
-  joinError.textContent = "";
-
-  socket.emit("join", {
-  username: username,
-  password: password
-});
+  // ✅ FIX 1: send username + password
+  socket.emit("join", { username, password });
 };
 
-// Send message
+// =====================
+// SERVER ERRORS
+// =====================
+socket.on("join_error", msg => {
+  alert(msg);
+});
+
+socket.on("room_full", msg => {
+  alert(msg);
+});
+
+// =====================
+// MESSAGE HISTORY
+// =====================
+socket.on("message_history", messages => {
+  messagesDiv.innerHTML = "";
+
+  messages.forEach(msg => {
+    addMessage(`${msg.username}: ${msg.text}`, msg.created_at);
+  });
+
+  joinContainer.classList.add("hidden");
+  chatContainer.classList.remove("hidden");
+});
+
+// =====================
+// SEND MESSAGE
+// =====================
 sendBtn.onclick = sendMessage;
 messageInput.addEventListener("keypress", e => {
   if (e.key === "Enter") sendMessage();
@@ -57,43 +92,42 @@ function sendMessage() {
   messageInput.value = "";
 }
 
-// Receive messages
+// =====================
+// RECEIVE MESSAGE
+// =====================
 socket.on("message", data => {
-  addMessage(`${data.user}: ${data.text}`);
+  addMessage(`${data.user}: ${data.text}`, data.time);
 });
 
-// User joined
+// =====================
+// USER EVENTS
+// =====================
 socket.on("user_joined", username => {
   addSystemMessage(`${username} joined`);
 });
 
-// User left
 socket.on("user_left", username => {
   addSystemMessage(`${username} left`);
 });
 
-// Update user list
 socket.on("users_list", users => {
   usersDiv.textContent = `Users (${users.length}/6): ${users.join(", ")}`;
 });
 
-// Room full
-socket.on("room_full", msg => {
-  joinError.textContent = msg;
-});
-
-// Join success
-socket.on("join_success", () => {
-  joinError.textContent = "";
-  joinContainer.classList.add("hidden");
-  chatContainer.classList.remove("hidden");
-});
-
-// Helpers
-function addMessage(text) {
+// =====================
+// HELPERS
+// =====================
+function addMessage(text, time) {
   const div = document.createElement("div");
   div.className = "message";
-  div.textContent = text;
+
+  if (time) {
+    const timeStr = new Date(time).toLocaleTimeString();
+    div.textContent = `${text} [${timeStr}]`;
+  } else {
+    div.textContent = text;
+  }
+
   messagesDiv.appendChild(div);
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
