@@ -116,5 +116,8 @@ button:hover {
 }
 
 #send-btn {
-  width: 90px;
+  width: 70px;        /* chhota aur balanced */
+  height: 38px;       /* input ke barabar */
+  font-size: 13px;
+  border-radius: 12px;
 }
