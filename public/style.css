@@ -1,109 +1,106 @@
-/* ===== PAGE BACKGROUND ===== */
-body {
-  margin: 0;
-  font-family: "Segoe UI", Arial, sans-serif;
-  background: linear-gradient(135deg, #E3F2FD, #BBDEFB);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
+* {
+  box-sizing: border-box;
+  font-family: "Segoe UI", sans-serif;
 }
 
-/* ===== HIDE CLASS ===== */
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Card base */
+.card {
+  width: 360px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 25px;
+  border-radius: 14px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+}
+
+/* Hidden */
 .hidden {
   display: none;
 }
 
-/* ===== MAIN CONTAINERS ===== */
-#join-container,
-#chat-container {
-  background: #ffffff;
-  width: 390px;
-  padding: 40px;
-  border-radius: 9px;
-  box-shadow: 0 15px 35px rgba(0,0,0,0.25);
-}
-
-/* ===== JOIN SCREEN ===== */
-#join-container h2 {
-  text-align: center;
+/* Headings */
+h2 {
   margin-bottom: 20px;
-  color:black;
+  text-align: center;
+  color: #333;
 }
 
-#join-container input {
+/* Inputs */
+input {
   width: 100%;
-  padding: 8px;
+  padding: 12px;
   margin-bottom: 12px;
-  border-radius: 6px;
+  border-radius: 8px;
   border: 1px solid #ccc;
   outline: none;
+  font-size: 14px;
 }
 
-#join-container input:focus {
-  border-color: black;
+input:focus {
+  border-color: #667eea;
 }
 
-#join-btn {
-  width: 10vh;
-  padding: 10px;
-  background:navy;
-  color: white;
+/* Buttons */
+button {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
   border: none;
-  border-radius: 6px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
   font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-#join-btn:hover {
-  background:gray;
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.25);
 }
 
+/* Error text */
 #join-error {
-  margin-top: 6px;
-  text-align: center;
   color: red;
-  font-size: 0.9em;
-}
-
-/* ===== CHAT HEADER ===== */
-#users {
+  font-size: 13px;
+  margin-top: 10px;
   text-align: center;
-  font-size: 0.85em;
-  color: #666;
-  margin-bottom: 8px;
 }
 
-/* ===== MESSAGES AREA ===== */
-#messages {
-  height: 260px;
-  background: #f5f7fb;
-  border-radius: 10px;
-  padding: 10px;
-  overflow-y: auto;
+/* Users bar */
+#users {
+  font-size: 13px;
+  color: #555;
   margin-bottom: 10px;
 }
 
-/* Individual message */
-.message {
-  background: #4facfe;
+/* Messages */
+#messages {
+  height: 260px;
+  overflow-y: auto;
+  padding-right: 6px;
+  margin-bottom: 10px;
+}
+
+/* Message bubbles */
+#messages div {
+  background: linear-gradient(135deg, #4facfe, #00c6ff);
   color: white;
-  padding: 8px 12px;
-  border-radius: 16px;
+  padding: 10px 14px;
+  border-radius: 18px;
   margin-bottom: 8px;
-  max-width: 75%;
-  font-size: 0.9em;
+  font-size: 14px;
 }
 
-/* System message */
-.system {
-  background: none;
-  color: gray;
-  text-align: center;
-  font-style: italic;
-}
-
-/* ===== INPUT AREA ===== */
+/* Input area */
 #input-area {
   display: flex;
   gap: 8px;
@@ -111,25 +108,8 @@ body {
 
 #message-input {
   flex: 1;
-  padding: 8px;
-  border-radius: 20px;
-  border: 1px solid #ccc;
-  outline: none;
-}
-
-#message-input:focus {
-  border-color: #4facfe;
 }
 
 #send-btn {
-  padding: 8px 16px;
-  background: #4facfe;
-  color: white;
-  border: none;
-  border-radius: 20px;
-  cursor: pointer;
-}
-
-#send-btn:hover {
-  background: #339dff;
+  width: 90px;
 }
