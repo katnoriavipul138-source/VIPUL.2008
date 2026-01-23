@@ -1,7 +1,11 @@
-// =====================
-// Database initialization (PostgreSQL)
-// =====================
+// ================================
+// Database initialization
+// ================================
 const { Pool } = require("pg");
+const express = require("express");
+const http = require("http");
+const path = require("path");
+const { Server } = require("socket.io");
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -19,22 +23,16 @@ async function initDB() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
-  console.log("PostgreSQL ready");
+  console.log("Database ready");
 }
 
-// =====================
-// Server initialization
-// =====================
-const express = require("express");
-const http = require("http");
-const path = require("path");
-const { Server } = require("socket.io");
-
+// ================================
+// Server setup
+// ================================
 const app = express();
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  transports: ["websocket", "polling"],
   cors: { origin: "*" }
 });
 
@@ -44,32 +42,27 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// =====================
-// Chat state
-// =====================
-const users = new Map();
+// ================================
+// Chat config
+// ================================
 const MAX_USERS = 6;
+const users = new Map();
 
+// ✅ FIXED USERS + PASSWORDS (YAHI FINAL HAI)
 const allowedUsers = {
-  anshika: "1111",
-  nishant: "2222",
-  vipul: "3333",
-  rohit: "4444",
-  neha: "5555",
-  aman: "6666"
+  Vipul: "1111",
+  Vishu: "2222",
+  Anshika: "3333",
+  Nishant: "4444",
+  Hardik: "5555",
+  Naman: "6666"
 };
 
-// =====================
-// Socket.IO logic
-// =====================
+// ================================
+// Socket.io logic
+// ================================
 io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
-
-  if (users.size >= MAX_USERS) {
-    socket.emit("room_full", "Chat room is full (max 6 users)");
-    socket.disconnect();
-    return;
-  }
+  console.log("Connected:", socket.id);
 
   socket.on("join", async ({ username, password }) => {
 
@@ -83,19 +76,25 @@ io.on("connection", (socket) => {
       return;
     }
 
+    if (users.size >= MAX_USERS) {
+      socket.emit("join_error", "❌ Room is full");
+      return;
+    }
+
     users.set(socket.id, username);
 
     socket.broadcast.emit("user_joined", username);
     io.emit("users_list", Array.from(users.values()));
 
     const { rows } = await pool.query(
-      `SELECT username, text, created_at
-       FROM messages
-       ORDER BY created_at ASC
+      `SELECT username, text, created_at 
+       FROM messages 
+       ORDER BY created_at ASC 
        LIMIT 50`
     );
 
     socket.emit("message_history", rows);
+    socket.emit("join_success");
   });
 
   socket.on("message", async (msg) => {
@@ -124,23 +123,18 @@ io.on("connection", (socket) => {
     socket.broadcast.emit("user_left", username);
     io.emit("users_list", Array.from(users.values()));
 
-    console.log("User disconnected:", socket.id);
+    console.log("Disconnected:", socket.id);
   });
 });
 
-// =====================
+// ================================
 // Start server
-// =====================
+// ================================
 const PORT = process.env.PORT || 3000;
 
 (async () => {
-  try {
-    await initDB();
-    server.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  } catch (err) {
-    console.error(err);
-    process.exit(1);
-  }
+  await initDB();
+  server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
 })();
