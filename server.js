@@ -3,18 +3,6 @@
 // =====================
 const { Pool } = require("pg");
 
-const ALLOWED_USERS = {
-  Vipul: "vipul@123",
-  Vishu: "vishu@123",
-  Anshika: "anshika@123",
-  Nishant: "nishant@123",
-  Hardik: "hardik@123",
-  Naman: "naman@123"
-};
-
-const MAX_USERS = 6;
-const users = new Map();
-
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.NODE_ENV === "production"
@@ -47,9 +35,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   transports: ["websocket", "polling"],
-  cors: {
-    origin: "*"
-  }
+  cors: { origin: "*" }
 });
 
 app.use(express.static(path.join(__dirname, "public")));
@@ -64,6 +50,15 @@ app.get("/", (req, res) => {
 const users = new Map();
 const MAX_USERS = 6;
 
+const allowedUsers = {
+  anshika: "1111",
+  nishant: "2222",
+  vipul: "3333",
+  rohit: "4444",
+  neha: "5555",
+  aman: "6666"
+};
+
 // =====================
 // Socket.IO logic
 // =====================
@@ -76,43 +71,32 @@ io.on("connection", (socket) => {
     return;
   }
 
-socket.on("join", async ({ username, password }) => {
+  socket.on("join", async ({ username, password }) => {
 
-  // ❌ username allowed nahi
-  if (!ALLOWED_USERS[username]) {
-    socket.emit("room_full", "Invalid username ❌");
-    return;
-  }
+    if (!allowedUsers[username]) {
+      socket.emit("join_error", "❌ Invalid username");
+      return;
+    }
 
-  // ❌ password galat
-  if (ALLOWED_USERS[username] !== password) {
-    socket.emit("room_full", "Wrong password ❌");
-    return;
-  }
+    if (allowedUsers[username] !== password) {
+      socket.emit("join_error", "❌ Wrong password");
+      return;
+    }
 
-  // ❌ room full
-  if (users.size >= MAX_USERS) {
-    socket.emit("room_full", "Room is full ❌");
-    return;
-  }
+    users.set(socket.id, username);
 
-  // ✅ sab sahi
-  users.set(socket.id, username);
-  socket.emit("join_success");
+    socket.broadcast.emit("user_joined", username);
+    io.emit("users_list", Array.from(users.values()));
 
-  socket.broadcast.emit("user_joined", username);
-  io.emit("users_list", Array.from(users.values()));
+    const { rows } = await pool.query(
+      `SELECT username, text, created_at
+       FROM messages
+       ORDER BY created_at ASC
+       LIMIT 50`
+    );
 
-  // Load last 50 messages
-  const { rows } = await pool.query(`
-    SELECT username, text, created_at
-    FROM messages
-    ORDER BY created_at ASC
-    LIMIT 50
-  `);
-
-  socket.emit("message_history", rows);
-});
+    socket.emit("message_history", rows);
+  });
 
   socket.on("message", async (msg) => {
     const username = users.get(socket.id);
@@ -145,20 +129,18 @@ socket.on("join", async ({ username, password }) => {
 });
 
 // =====================
-// Start server AFTER DB
+// Start server
 // =====================
 const PORT = process.env.PORT || 3000;
 
 (async () => {
   try {
-    console.log("Connecting to PostgreSQL...");
     await initDB();
-
-    server.listen(PORT, "0.0.0.0", () => {
+    server.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
   } catch (err) {
-    console.error("Startup error:", err);
+    console.error(err);
     process.exit(1);
   }
 })();
