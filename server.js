@@ -1,12 +1,17 @@
-// ================================
-// Database initialization
-// ================================
-const { Pool } = require("pg");
 const express = require("express");
 const http = require("http");
 const path = require("path");
 const { Server } = require("socket.io");
+const { Pool } = require("pg");
 
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  transports: ["websocket", "polling"],
+  cors: { origin: "*" }
+});
+
+// DB
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.NODE_ENV === "production"
@@ -23,32 +28,20 @@ async function initDB() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
-  console.log("Database ready");
+  console.log("DB ready");
 }
 
-// ================================
-// Server setup
-// ================================
-const app = express();
-const server = http.createServer(app);
-
-const io = new Server(server, {
-  cors: { origin: "*" }
-});
-
+// STATIC
 app.use(express.static(path.join(__dirname, "public")));
+app.get("/", (_, res) =>
+  res.sendFile(path.join(__dirname, "public", "index.html"))
+);
 
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
-
-// ================================
-// Chat config
-// ================================
-const MAX_USERS = 6;
+// CHAT STATE
 const users = new Map();
+const MAX_USERS = 6;
 
-// ✅ FIXED USERS + PASSWORDS (YAHI FINAL HAI)
+// ✅ ONLY THESE USERS CAN LOGIN
 const allowedUsers = {
   Vipul: "1111",
   Vishu: "2222",
@@ -58,14 +51,15 @@ const allowedUsers = {
   Naman: "6666"
 };
 
-// ================================
-// Socket.io logic
-// ================================
-io.on("connection", (socket) => {
-  console.log("Connected:", socket.id);
+// SOCKET
+io.on("connection", socket => {
+  if (users.size >= MAX_USERS) {
+    socket.emit("room_full", "Chat room full (max 6 users)");
+    socket.disconnect();
+    return;
+  }
 
   socket.on("join", async ({ username, password }) => {
-
     if (!allowedUsers[username]) {
       socket.emit("join_error", "❌ Invalid username");
       return;
@@ -76,28 +70,23 @@ io.on("connection", (socket) => {
       return;
     }
 
-    if (users.size >= MAX_USERS) {
-      socket.emit("join_error", "❌ Room is full");
-      return;
-    }
-
     users.set(socket.id, username);
+    socket.emit("join_success");
 
     socket.broadcast.emit("user_joined", username);
     io.emit("users_list", Array.from(users.values()));
 
     const { rows } = await pool.query(
-      `SELECT username, text, created_at 
-       FROM messages 
-       ORDER BY created_at ASC 
+      `SELECT username, text, created_at
+       FROM messages
+       ORDER BY created_at ASC
        LIMIT 50`
     );
 
     socket.emit("message_history", rows);
-    socket.emit("join_success");
   });
 
-  socket.on("message", async (msg) => {
+  socket.on("message", async msg => {
     const username = users.get(socket.id);
     if (!username) return;
 
@@ -122,19 +111,14 @@ io.on("connection", (socket) => {
     users.delete(socket.id);
     socket.broadcast.emit("user_left", username);
     io.emit("users_list", Array.from(users.values()));
-
-    console.log("Disconnected:", socket.id);
   });
 });
 
-// ================================
-// Start server
-// ================================
+// START
 const PORT = process.env.PORT || 3000;
-
 (async () => {
   await initDB();
-  server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
+  server.listen(PORT, () =>
+    console.log("Server running on", PORT)
+  );
 })();
