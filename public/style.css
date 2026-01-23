@@ -92,12 +92,17 @@ button:hover {
 
 /* Message bubbles */
 #messages div {
-  background: linear-gradient(135deg, #4facfe, #00c6ff);
-  color: white;
+  background: linear-gradient(
+    135deg,
+    rgba(120, 180, 255, 0.45),
+    rgba(90, 150, 230, 0.45)
+  );
+  color: #1f2d3d;
   padding: 10px 14px;
   border-radius: 18px;
   margin-bottom: 8px;
   font-size: 14px;
+  backdrop-filter: blur(4px);
 }
 
 /* Input area */
