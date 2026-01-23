@@ -2,15 +2,6 @@ const socket = io({
   transports: ["websocket"]
 });
 
-// Client-side helper (UI only)
-const USERS = {
-  anshika: "anshika@123",
-  nishant: "nishant@123",
-  vipul: "vipul@123",
-  rohit: "rohit@123",
-  rahul: "rahul@123",
-  aman: "aman@123"
-};
 
 const joinContainer = document.getElementById("join-container");
 const chatContainer = document.getElementById("chat-container");
@@ -32,22 +23,10 @@ joinBtn.onclick = () => {
   const password = passwordInput.value.trim();
 
   if (!username || !password) {
-    alert("Username and Password are required!");
+    alert("Username and Password are required");
     return;
   }
 
-  if (!USERS[username]) {
-    alert("❌ Invalid Username!");
-    return;
-  }
-
-  if (USERS[username] !== password) {
-    alert("❌ Wrong Password!");
-    passwordInput.value = "";
-    return;
-  }
-
-  // ✅ FIX 1: send username + password
   socket.emit("join", { username, password });
 };
 
