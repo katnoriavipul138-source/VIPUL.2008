@@ -8,21 +8,19 @@
 <body>
 
   <!-- Join screen -->
-  <div id="join-container">
+  <div id="join-container" class="card">
     <h2>Join Chat</h2>
 
-    <!-- Username -->
-    <input 
-      id="username" 
-      type="text" 
-      placeholder="Enter username" 
+    <input
+      id="username"
+      type="text"
+      placeholder="Enter username"
     />
 
-    <!-- Password -->
-    <input 
-      id="password" 
-      type="password" 
-      placeholder="Enter password" 
+    <input
+      id="password"
+      type="password"
+      placeholder="Enter password"
     />
 
     <button id="join-btn">Join</button>
@@ -30,21 +28,23 @@
   </div>
 
   <!-- Chat screen -->
-  <div id="chat-container" class="hidden">
+  <div id="chat-container" class="card hidden">
+
     <div id="users"></div>
 
     <div id="messages"></div>
 
     <div id="input-area">
-      <input 
-        id="message-input" 
-        placeholder="Type a message..." 
+      <input
+        id="message-input"
+        placeholder="Type a message..."
       />
       <button id="send-btn">Send</button>
     </div>
+
   </div>
 
-  <!-- Socket.IO client -->
+  <!-- Socket.IO -->
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <script src="script.js"></script>
 
